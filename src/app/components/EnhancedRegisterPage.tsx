@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { UserPlus, Mail, Lock, Eye, EyeOff, User, Stethoscope, CheckCircle, Loader2 } from 'lucide-react';
-import { registerUser, loginUser } from '../services/api';
-import { validateEmail } from '../utils/emailValidator';
+import { UserPlus, Mail, Lock, Eye, EyeOff, User, Stethoscope, CheckCircle } from 'lucide-react';
 
 interface EnhancedRegisterPageProps {
   onNavigate: (page: string) => void;
@@ -21,92 +19,18 @@ export function EnhancedRegisterPage({ onNavigate, onRegister }: EnhancedRegiste
     specialty: '', // For clinicians
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false); // 🔥 NEW: Success message
 
   const handleRoleSelect = (role: 'patient' | 'clinician') => {
     setSelectedRole(role);
     setStep('details');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    // 🔥 VALIDATE EMAIL - Check if it's a REAL email
-    const emailValidation = validateEmail(formData.email);
-    if (!emailValidation.isValid) {
-      setError(emailValidation.error || 'Invalid email address');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-
-    if (selectedRole === 'clinician' && (!formData.licenseNumber || !formData.specialty)) {
-      setError('Please provide license number and specialty');
-      return;
-    }
-
-    if (!selectedRole) {
-      setError('Please select a role');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      // Prepare registration data
-      const registrationData: any = {
-        name: formData.fullName,
-        email: formData.email,
-        password: formData.password,
-        role: selectedRole,
-      };
-
-      // Add clinician-specific fields
-      if (selectedRole === 'clinician') {
-        registrationData.licenseNumber = formData.licenseNumber;
-        registrationData.specialty = formData.specialty;
-      }
-
-      // 🔥 Call backend API to register
-      // Store user data for later use after email verification
-      localStorage.setItem('pendingUser', JSON.stringify({
-        email: formData.email,
-        name: formData.fullName,
-        role: selectedRole,
-      }));
-
-      const response = await registerUser(registrationData);
-
-      console.log('Registration successful!', response);
-
-      // 🔥 Show success message - User must verify email
-      setShowSuccessMessage(true);
-      
-      // Don't auto-redirect - user stays on success screen
-      // They will be redirected after clicking email verification link
-
-    } catch (error: any) {
-      console.error('Registration failed:', error);
-      setError(error.message || 'Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    if (!selectedRole) return;
+    const displayName = formData.fullName || 'Guest User';
+    const displayEmail = formData.email || 'guest@chemovigi.com';
+    onRegister(selectedRole, displayName, displayEmail);
   };
 
   return (
@@ -237,25 +161,6 @@ export function EnhancedRegisterPage({ onNavigate, onRegister }: EnhancedRegiste
             </div>
 
             <div className="p-8">
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
-                >
-                  {error}
-                </motion.div>
-              )}
-
-              {showSuccessMessage && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm"
-                >
-                  Registration successful! Please check your email to verify your account.
-                </motion.div>
-              )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Full Name */}
@@ -283,7 +188,7 @@ export function EnhancedRegisterPage({ onNavigate, onRegister }: EnhancedRegiste
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
-                      type="email"
+                      type="text"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="your.email@example.com"
@@ -380,23 +285,15 @@ export function EnhancedRegisterPage({ onNavigate, onRegister }: EnhancedRegiste
                   </button>
                   <motion.button
                     type="submit"
-                    disabled={isLoading}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className={`flex-1 py-3 bg-gradient-to-r ${
-                      selectedRole === 'patient' 
-                        ? 'from-blue-600 to-blue-700' 
+                      selectedRole === 'patient'
+                        ? 'from-blue-600 to-blue-700'
                         : 'from-teal-600 to-teal-700'
-                    } text-white rounded-lg hover:shadow-xl transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    } text-white rounded-lg hover:shadow-xl transition-all font-semibold flex items-center justify-center gap-2`}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Creating Account...
-                      </>
-                    ) : (
-                      'Create Account'
-                    )}
+                    Create Account
                   </motion.button>
                 </div>
               </form>
