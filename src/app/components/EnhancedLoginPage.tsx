@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Lock, Mail, Eye, EyeOff, User, Stethoscope, Loader2 } from 'lucide-react';
-import { loginUser } from '../services/api';
+import { Lock, Mail, Eye, EyeOff, User, Stethoscope } from 'lucide-react';
 
 interface EnhancedLoginPageProps {
   onNavigate: (page: string) => void;
@@ -14,46 +13,18 @@ export function EnhancedLoginPage({ onNavigate, onLogin }: EnhancedLoginPageProp
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleRoleSelect = (role: 'patient' | 'clinician') => {
     setSelectedRole(role);
     setStep('credentials');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-    
-    if (!selectedRole) {
-      setError('Please select a role');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      // Call backend API
-      const response = await loginUser({
-        email,
-        password,
-        role: selectedRole,
-      });
-
-      // Success! Login user
-      console.log('Login successful:', response);
-      onLogin(selectedRole, response.user.name, response.user.email);
-    } catch (error: any) {
-      console.error('Login failed:', error);
-      setError(error.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
-    }
+    if (!selectedRole) return;
+    const displayName = email ? email.split('@')[0] : 'Guest User';
+    const displayEmail = email || 'guest@chemovigi.com';
+    onLogin(selectedRole, displayName, displayEmail);
   };
 
   return (
@@ -148,15 +119,6 @@ export function EnhancedLoginPage({ onNavigate, onLogin }: EnhancedLoginPageProp
             </div>
 
             <div className="p-8">
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
-                >
-                  {error}
-                </motion.div>
-              )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email Field */}
@@ -165,7 +127,7 @@ export function EnhancedLoginPage({ onNavigate, onLogin }: EnhancedLoginPageProp
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
-                      type="email"
+                      type="text"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="your.email@example.com"
@@ -217,23 +179,15 @@ export function EnhancedLoginPage({ onNavigate, onLogin }: EnhancedLoginPageProp
                   </button>
                   <motion.button
                     type="submit"
-                    disabled={isLoading}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className={`flex-1 py-3 bg-gradient-to-r ${
-                      selectedRole === 'patient' 
-                        ? 'from-blue-600 to-blue-700' 
+                      selectedRole === 'patient'
+                        ? 'from-blue-600 to-blue-700'
                         : 'from-teal-600 to-teal-700'
-                    } text-white rounded-lg hover:shadow-xl transition-all font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    } text-white rounded-lg hover:shadow-xl transition-all font-semibold flex items-center justify-center gap-2`}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Signing In...
-                      </>
-                    ) : (
-                      'Sign In'
-                    )}
+                    Sign In
                   </motion.button>
                 </div>
               </form>
